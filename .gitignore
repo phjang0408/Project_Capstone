@@ -1,0 +1,17 @@
+# =========================
+# Ignore everything by default
+# =========================
+*
+
+# =========================
+# Allow source code only
+# =========================
+!Source/
+!Source/Capstone/
+!Source/Capstone/**
+
+# =========================
+# Allow git config file
+# =========================
+!.gitignore
+.claude/
