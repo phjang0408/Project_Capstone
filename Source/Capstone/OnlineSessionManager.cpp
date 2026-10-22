@@ -1,4 +1,4 @@
-#include "OnlineSessionManager.h"
+ï»¿#include "OnlineSessionManager.h"
 #include "OnlineSubsystem.h"
 #include "Online/OnlineSessionNames.h"
 #include "Interfaces/OnlineIdentityInterface.h"
@@ -10,6 +10,13 @@
 #include "Serialization/JsonSerializer.h"
 #include "Policies/CondensedJsonPrintPolicy.h"
 
+/**
+ * UOnlineSessionManager (GameInstanceSubsystem)
+ * - Steam OnlineSubsystem ê¸°ë°˜ ì„¸ì…˜ ìƒì„±/ê²€ìƒ‰/ì°¸ê°€/í‡´ì¥
+ * - Steam ë¡œê·¸ì¸ í›„ Spring ë°±ì—”ë“œ ë¡œê·¸ì¸, ë°© ìƒì„±/ì‚­ì œ ìš”ì²­
+ * - [Spring í†µì‹  ë¹„í™œì„±í™”] ì„œë²„ ë¹„ìš© ë°©ì§€ë¥¼ ìœ„í•´ í˜„ì¬ HTTP ìš”ì²­ë¶€ëŠ” ë¸”ë¡ ì£¼ì„ìœ¼ë¡œ ì²˜ë¦¬ë¨
+ *   ë³µêµ¬ ì‹œ ê° í•¨ìˆ˜ì˜ [Spring í†µì‹  ë¹„í™œì„±í™”] í‘œì‹œ ì•„ë˜ ë¸”ë¡ ì£¼ì„ ì œê±°
+ */
 
 UOnlineSessionManager::UOnlineSessionManager()
 {
@@ -17,7 +24,7 @@ UOnlineSessionManager::UOnlineSessionManager()
 }
 
 /**
- * ¼­ºê½Ã½ºÅÛ ÃÊ±âÈ­ ÇÔ¼ö
+ * ì„œë¸Œì‹œìŠ¤í…œ ì´ˆê¸°í™” í•¨ìˆ˜
  */
 void UOnlineSessionManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -44,7 +51,7 @@ void UOnlineSessionManager::Initialize(FSubsystemCollectionBase& Collection)
 
 		if (IdentityInterface.IsValid())
 		{
-			// Delegate µî·Ï
+			// Delegate ë“±ë¡
 			LoginStatusChangedHandle =
 				IdentityInterface->AddOnLoginStatusChangedDelegate_Handle(
 					0,
@@ -62,7 +69,7 @@ void UOnlineSessionManager::Initialize(FSubsystemCollectionBase& Collection)
 	}
 
 }
-// Àç·Î±×ÀÎ ¹× Àç¿äÃ» ¾ÈÀü¿ë
+// ì¬ë¡œê·¸ì¸ ë° ì¬ìš”ì²­ ì•ˆì „ìš©
 void UOnlineSessionManager::OnLoginStatusChanged(int32 LocalUserNum,
 	ELoginStatus::Type PreviousStatus,
 	ELoginStatus::Type NewStatus,
@@ -93,7 +100,7 @@ void UOnlineSessionManager::OnLoginStatusChanged(int32 LocalUserNum,
 }
 void UOnlineSessionManager::Deinitialize()
 {
-	UE_LOG(LogOnlineSession, Log, TEXT("[Deinitialize] ¼¼¼Ç ÀÎÅÍÆäÀÌ½º ÇØÁ¦"));
+	UE_LOG(LogOnlineSession, Log, TEXT("[Deinitialize] ì„¸ì…˜ ì¸í„°í˜ì´ìŠ¤ í•´ì œ"));
 	if (IdentityInterface.IsValid())
 	{
 		IdentityInterface->ClearOnLoginStatusChangedDelegate_Handle(0, LoginStatusChangedHandle);
@@ -107,49 +114,50 @@ void UOnlineSessionManager::Deinitialize()
 
 
 #pragma region CreateSession
-//±âÁ¸ ¼¼¼Ç °Ë»ç¿Í ¾ø´Ù¸é Internal»ı¼º
+//ê¸°ì¡´ ì„¸ì…˜ ê²€ì‚¬ì™€ ì—†ë‹¤ë©´ Internalìƒì„±
 void UOnlineSessionManager::CreateSession(int32 NumPublicConnections, bool bIsLAN)
 {
-	// ÀÎÅÍÆäÀÌ½º À¯È¿¼º °Ë»ç
+	// ì¸í„°í˜ì´ìŠ¤ ìœ íš¨ì„± ê²€ì‚¬
 	if (!SessionInterface.IsValid())
 	{
 		UE_LOG(LogOnlineSession, Error, TEXT("[CreateSession] SessionInterface is invalid!"));
 		return;
 	}
 	UE_LOG(LogOnlineSession, Log, TEXT("[CreateSession] Request received: Connections=%d, LAN=%d"), NumPublicConnections, bIsLAN);
-	// ¸¸¾à ±âÁ¸ ¼¼¼ÇÀ» ÆÄ±«ÇÏ°í ´Ù½Ã ¸¸µé¾î¾ß ÇÒ °æ¿ì¸¦ ´ëºñÇØ ¼³Á¤°ª ÀúÀå
+	// ë§Œì•½ ê¸°ì¡´ ì„¸ì…˜ì„ íŒŒê´´í•˜ê³  ë‹¤ì‹œ ë§Œë“¤ì–´ì•¼ í•  ê²½ìš°ë¥¼ ëŒ€ë¹„í•´ ì„¤ì •ê°’ ì €ì¥
 	NumPublicConnectionsCached = NumPublicConnections;
 	bIsLANCached = bIsLAN;
 
-	// 'GameSession'ÀÌ¶ó´Â ÀÌ¸§ÀÇ ¼¼¼ÇÀÌ ÀÌ¹Ì Á¸ÀçÇÏ´ÂÁö È®ÀÎ
+	// 'GameSession'ì´ë¼ëŠ” ì´ë¦„ì˜ ì„¸ì…˜ì´ ì´ë¯¸ ì¡´ì¬í•˜ëŠ”ì§€ í™•ì¸
 	FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 	if (ExistingSession)
 	{
-		UE_LOG(LogOnlineSession, Warning, TEXT("[CreateSession] ÀÌ¹Ì ¼¼¼ÇÀÌ Á¸ÀçÇÕ´Ï´Ù. ÆÄ±« ÈÄ Àç»ı¼ºÇÕ´Ï´Ù."));
+		UE_LOG(LogOnlineSession, Warning, TEXT("[CreateSession] ì´ë¯¸ ì„¸ì…˜ì´ ì¡´ì¬í•©ë‹ˆë‹¤. íŒŒê´´ í›„ ì¬ìƒì„±í•©ë‹ˆë‹¤."));
 
-		// ±âÁ¸¿¡ ¿¬°áµÈ µ¨¸®°ÔÀÌÆ®°¡ ÀÖ´Ù¸é Á¤¸®
+		// ê¸°ì¡´ì— ì—°ê²°ëœ ë¸ë¦¬ê²Œì´íŠ¸ê°€ ìˆë‹¤ë©´ ì •ë¦¬
 		if (OnDestroySessionCompleteHandle.IsValid())
 		{
 			SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteHandle);
 		}
 
-		// ÆÄ±«°¡ ¿Ï·áµÇ¸é 'OnDestroySessionThenCreate' ÇÔ¼ö¸¦ È£ÃâÇÏµµ·Ï µî·Ï
+		// íŒŒê´´ê°€ ì™„ë£Œë˜ë©´ 'OnDestroySessionThenCreate' í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•˜ë„ë¡ ë“±ë¡
 		OnDestroySessionCompleteHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
 			FOnDestroySessionCompleteDelegate::CreateUObject(this, &UOnlineSessionManager::OnDestroySessionThenCreate));
 
-		// ¼¼¼Ç ÆÄ±« ½ÇÇà
+		// ì„¸ì…˜ íŒŒê´´ ì‹¤í–‰
 		SessionInterface->DestroySession(NAME_GameSession);
 	}
 	else
 	{
-		// ¼¼¼ÇÀÌ ¾øÀ¸¸é ¹Ù·Î »ı¼º ·ÎÁ÷ ÁøÀÔ
+		// ì„¸ì…˜ì´ ì—†ìœ¼ë©´ ë°”ë¡œ ìƒì„± ë¡œì§ ì§„ì…
 		CreateSessionInternal(NumPublicConnections, bIsLAN);
 	}
 }
 
+//Springì— ë°© ìƒì„± ìš”ì²­ (ì„¸ì…˜ ìƒì„± ì„±ê³µ ì‹œ OnCreateSessionCompleteì—ì„œ í˜¸ì¶œ)
 void UOnlineSessionManager::CreateRoomOnSpring(const FString& RoomId, int32 MaxPlayers)
 {
-	//JSON ÆÄšØ
+	//JSON ìƒì„±
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 	JsonObject->SetStringField("room_id", RoomId);
 	JsonObject->SetNumberField("host_user_id", UserId);
@@ -159,40 +167,44 @@ void UOnlineSessionManager::CreateRoomOnSpring(const FString& RoomId, int32 MaxP
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Body);
 	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
 
+	// [Spring í†µì‹  ë¹„í™œì„±í™”] ì„œë²„ ë¹„ìš© ë°©ì§€ë¥¼ ìœ„í•´ HTTP ìš”ì²­ë¶€ ì£¼ì„ ì²˜ë¦¬ (ë³µêµ¬ ì‹œ /* */ ì œê±°)
+	UE_LOG(LogOnlineSession, Warning, TEXT("[CreateRoomOnSpring] Spring request disabled"));
+	/*
 	auto Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://127.0.0.1:7777/api/room-context")); //@@@@@@@@@ENDÆ÷ÀÎÆ®@@@@@@
+	Request->SetURL(TEXT("http://127.0.0.1:7777/api/room-context")); // Spring Boot ì—”ë“œí¬ì¸íŠ¸
 	Request->SetVerb("POST");
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetHeader(TEXT("Room-Id"), RoomId);
 	//Request->SetHeader(TEXT("Authorization"), FString::Printf(TEXT("Bearer %s"), *AccessToken));
 	Request->SetContentAsString(Body);
 	Request->ProcessRequest();
+	*/
 }
-//½ÇÁ¦ ¼¼¼Ç »ı¼º ¿äÃ»
+//ì‹¤ì œ ì„¸ì…˜ ìƒì„± ìš”ì²­
 void UOnlineSessionManager::CreateSessionInternal(int32 NumPublicConnections, bool bIsLAN)
 {
-	UE_LOG(LogOnlineSession, Log, TEXT("[CreateSession] ¼¼¼Ç »ı¼º ½Ãµµ. ÀÎ¿ø: %d, LAN: %d"), NumPublicConnections, bIsLAN);
+	UE_LOG(LogOnlineSession, Log, TEXT("[CreateSession] ì„¸ì…˜ ìƒì„± ì‹œë„. ì¸ì›: %d, LAN: %d"), NumPublicConnections, bIsLAN);
 
-	// ¼¼¼Ç ¼³Á¤ (FOnlineSessionSettings)
+	// ì„¸ì…˜ ì„¤ì • (FOnlineSessionSettings)
 	FOnlineSessionSettings SessionSettings;
-	SessionSettings.bIsLANMatch = false;                        // LAN ¿©ºÎ
-	SessionSettings.NumPublicConnections = NumPublicConnections; // ÃÖ´ë Á¢¼Ó ÀÎ¿ø
-	SessionSettings.bAllowJoinInProgress = true;                 // °ÔÀÓ µµÁß ³­ÀÔ Çã¿ë
-	SessionSettings.bShouldAdvertise = true;                     // ´Ù¸¥ ÇÃ·¹ÀÌ¾î°¡ ÀÌ ¹æÀ» °Ë»öÇÒ ¼ö ÀÖ°Ô ÇÔ (ÇÊ¼ö)
-	SessionSettings.bUsesPresence = true;                        // ½ºÆÀ ¿À¹ö·¹ÀÌ/Ä£±¸ ÃÊ´ë ±â´É »ç¿ë (½ºÆÀ ÇÊ¼ö)
-	SessionSettings.bUseLobbiesIfAvailable = true;               // ½ºÆÀ ·Îºñ API »ç¿ë (ÀÌ°É ÄÑ¾ß ½ºÆÀ ·Îºñ·Î ÀâÈû)
+	SessionSettings.bIsLANMatch = false;                        // LAN ì—¬ë¶€
+	SessionSettings.NumPublicConnections = NumPublicConnections; // ìµœëŒ€ ì ‘ì† ì¸ì›
+	SessionSettings.bAllowJoinInProgress = true;                 // ê²Œì„ ë„ì¤‘ ë‚œì… í—ˆìš©
+	SessionSettings.bShouldAdvertise = true;                     // ë‹¤ë¥¸ í”Œë ˆì´ì–´ê°€ ì´ ë°©ì„ ê²€ìƒ‰í•  ìˆ˜ ìˆê²Œ í•¨ (í•„ìˆ˜)
+	SessionSettings.bUsesPresence = true;                        // ìŠ¤íŒ€ ì˜¤ë²„ë ˆì´/ì¹œêµ¬ ì´ˆëŒ€ ê¸°ëŠ¥ ì‚¬ìš© (ìŠ¤íŒ€ í•„ìˆ˜)
+	SessionSettings.bUseLobbiesIfAvailable = true;               // ìŠ¤íŒ€ ë¡œë¹„ API ì‚¬ìš© (ì´ê±¸ ì¼œì•¼ ìŠ¤íŒ€ ë¡œë¹„ë¡œ ì¡í˜)
 
 
 	SessionSettings.Set(SEARCH_PRESENCE, true, EOnlineDataAdvertisementType::ViaOnlineService);
 	SessionSettings.Set(SEARCH_LOBBIES, true, EOnlineDataAdvertisementType::ViaOnlineService);
 
 
-	// µ¨¸®°ÔÀÌÆ® ÇÚµé ÃÊ±âÈ­ ¹× µî·Ï
+	// ë¸ë¦¬ê²Œì´íŠ¸ í•¸ë“¤ ì´ˆê¸°í™” ë° ë“±ë¡
 	if (OnCreateSessionCompleteHandle.IsValid())
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteHandle);
 	}
-	// »ı¼ºÀÌ ¿Ï·áµÇ¸é OnCreateSessionComplete È£Ãâ
+	// ìƒì„±ì´ ì™„ë£Œë˜ë©´ OnCreateSessionComplete í˜¸ì¶œ
 	OnCreateSessionCompleteHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(
 		FOnCreateSessionCompleteDelegate::CreateUObject(this, &UOnlineSessionManager::OnCreateSessionComplete));
 	UE_LOG(LogOnlineSession, Warning,
@@ -200,7 +212,7 @@ void UOnlineSessionManager::CreateSessionInternal(int32 NumPublicConnections, bo
 		SessionSettings.bShouldAdvertise,
 		SessionSettings.bUsesPresence
 	);
-	// ¼¼¼Ç »ı¼º ¿äÃ» º¸³»±â
+	// ì„¸ì…˜ ìƒì„± ìš”ì²­ ë³´ë‚´ê¸°
 	if (!SessionInterface->CreateSession(0, NAME_GameSession, SessionSettings))
 	{
 		UE_LOG(LogOnlineSession, Error, TEXT("[CreateSession] CreateSession API Not Found"));
@@ -210,7 +222,7 @@ void UOnlineSessionManager::CreateSessionInternal(int32 NumPublicConnections, bo
 
 void UOnlineSessionManager::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	// µ¨¸®°ÔÀÌÆ® ÇØÁ¦
+	// ë¸ë¦¬ê²Œì´íŠ¸ í•´ì œ
 	if (SessionInterface.IsValid())
 	{
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteHandle);
@@ -221,9 +233,9 @@ void UOnlineSessionManager::OnCreateSessionComplete(FName SessionName, bool bWas
 		FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(NAME_GameSession);
 		if (NamedSession && NamedSession->SessionInfo.IsValid())
 		{
-			// ¿©±â¼­ CurrentRoomId¸¦ SessionId·Î ¼³Á¤, CurrentRoomId¸¦ ¶Ç GameState·Î ³Ñ°Ü¾ß´í´Ù ±â¾ïÇØ!
+			// CurrentRoomId = SessionId (ì´í›„ GameStateì˜ RoomIDë¡œ ì „ë‹¬ë¨)
 			CurrentRoomId = NamedSession->SessionInfo->GetSessionId().ToString();
-			// µ¨¸®°ÔÀÌÆ®·Î Ãß°¡ÇØ¹ö¸®±â~
+			// BPì— RoomId ê°±ì‹  ì•Œë¦¼
 			OnRoomIdUpdated.Broadcast(CurrentRoomId);
 
 			
@@ -238,14 +250,14 @@ void UOnlineSessionManager::OnCreateSessionComplete(FName SessionName, bool bWas
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			// ?listen ¿É¼Ç
+			// ?listen ì˜µì…˜
 			FString LobbyPath = TEXT("/Game/FPMovement/Demo/Maps/Lobby?listen");
 			World->ServerTravel(LobbyPath);
 		}
 	}
 	else
 	{
-		UE_LOG(LogOnlineSession, Error, TEXT("[OnCreateSessionComplete] ¼¼¼Ç »ı¼º ½ÇÆĞ."));
+		UE_LOG(LogOnlineSession, Error, TEXT("[OnCreateSessionComplete] ì„¸ì…˜ ìƒì„± ì‹¤íŒ¨."));
 	}
 	
 }
@@ -257,7 +269,7 @@ void UOnlineSessionManager::OnDestroySessionThenCreate(FName SessionName, bool b
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteHandle);
 	}
 
-	// ÆÄ±«°¡ ³¡³µÀ¸¹Ç·Î ¾Æ±î ÀúÀåÇØµĞ ¼³Á¤°ªÀ¸·Î ´Ù½Ã »ı¼º ½Ãµµ
+	// íŒŒê´´ê°€ ëë‚¬ìœ¼ë¯€ë¡œ ì•„ê¹Œ ì €ì¥í•´ë‘” ì„¤ì •ê°’ìœ¼ë¡œ ë‹¤ì‹œ ìƒì„± ì‹œë„
 	CreateSessionInternal(NumPublicConnectionsCached, bIsLANCached);
 }
 #pragma endregion
@@ -268,18 +280,18 @@ void UOnlineSessionManager::FindSession()
 {
 	if (!SessionInterface.IsValid()) return;
 
-	UE_LOG(LogOnlineSession, Log, TEXT("[FindSession] ¼¼¼Ç °Ë»ö ½ÃÀÛ..."));
+	UE_LOG(LogOnlineSession, Log, TEXT("[FindSession] ì„¸ì…˜ ê²€ìƒ‰ ì‹œì‘..."));
 
-	// °Ë»ö °´Ã¼ »ı¼º (Shared Pointer »ç¿ë)
+	// ê²€ìƒ‰ ê°ì²´ ìƒì„± (Shared Pointer ì‚¬ìš©)
 	SessionSearch = MakeShared<FOnlineSessionSearch>();
-	SessionSearch->MaxSearchResults = 10; // ÃÖ´ë 10°³ °Ë»ö
-	SessionSearch->bIsLanQuery = false;   // ½ºÆÀOSS±âº»ÀÌ false¸é LAN½ºÆÀÀº ¾î¶»°Ô ¸¸µç°É±î
+	SessionSearch->MaxSearchResults = 10; // ìµœëŒ€ 10ê°œ ê²€ìƒ‰
+	SessionSearch->bIsLanQuery = false;   // LAN ê²€ìƒ‰ ì•ˆ í•¨ (Steam ì˜¨ë¼ì¸ ê²€ìƒ‰)
 
-	//Presence(»óÅÂ Á¤º¸)¿Í Lobby(·Îºñ) °Ë»ö È°¼ºÈ­
+	//Presence(ìƒíƒœ ì •ë³´)ì™€ Lobby(ë¡œë¹„) ê²€ìƒ‰ í™œì„±í™”
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 	SessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
 
-	// µ¨¸®°ÔÀÌÆ® µî·Ï
+	// ë¸ë¦¬ê²Œì´íŠ¸ ë“±ë¡
 	if (OnFindSessionsCompleteHandle.IsValid())
 	{
 		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteHandle);
@@ -287,7 +299,7 @@ void UOnlineSessionManager::FindSession()
 	OnFindSessionsCompleteHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(
 		FOnFindSessionsCompleteDelegate::CreateUObject(this, &UOnlineSessionManager::OnFindSessionsComplete));
 
-	// °Ë»ö ½ÇÇà
+	// ê²€ìƒ‰ ì‹¤í–‰
 	SessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
 }
 
@@ -298,21 +310,21 @@ void UOnlineSessionManager::OnFindSessionsComplete(bool bWasSuccessful)
 		SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteHandle);
 	}
 
-	TArray<int32> OutMaxPlayers; // ºí·çÇÁ¸°Æ® UI Ç¥½Ã¿ë
+	TArray<int32> OutMaxPlayers; // ë¸”ë£¨í”„ë¦°íŠ¸ UI í‘œì‹œìš©
 
 	if (bWasSuccessful && SessionSearch.IsValid())
 	{
-		UE_LOG(LogOnlineSession, Log, TEXT("[OnFindSessionsComplete] °Ë»ö ¿Ï·á. Ã£Àº ¹æ °³¼ö: %d"), SessionSearch->SearchResults.Num());
+		UE_LOG(LogOnlineSession, Log, TEXT("[OnFindSessionsComplete] ê²€ìƒ‰ ì™„ë£Œ. ì°¾ì€ ë°© ê°œìˆ˜: %d"), SessionSearch->SearchResults.Num());
 
-		// °Ë»ö °á°ú= ¸â¹ö º¯¼ö SearchResults¿¡ ÀúÀå -> ³ªÁß¿¡ JoinÇÒ ¶§ ¾²±â
+		// ê²€ìƒ‰ ê²°ê³¼= ë©¤ë²„ ë³€ìˆ˜ SearchResultsì— ì €ì¥ -> ë‚˜ì¤‘ì— Joiní•  ë•Œ ì“°ê¸°
 		SearchResults = SessionSearch->SearchResults;
 
-		// °Ë»öµÈ °¢ ¹æÀÇ Á¤º¸¸¦ ¼øÈ¸
+		// ê²€ìƒ‰ëœ ê° ë°©ì˜ ì •ë³´ë¥¼ ìˆœíšŒ
 		for (const auto& Result : SearchResults)
 		{
 			if (Result.IsValid())
 			{
-				// UI¿¡ º¸¿©ÁÙ Á¤º¸ ÃßÃâ (¿©±â¼­´Â ÃÖ´ë ÀÎ¿ø¼ö¸¸ »Ì¾Æµµ ÇÎÀÌ¶û nameÀº °Å±â ÀÖ¾úÀ¸´Ï±î)
+				// UIì— ë³´ì—¬ì¤„ ì •ë³´ ì¶”ì¶œ (ìµœëŒ€ ì¸ì›ìˆ˜)
 				int32 MaxPlayers = Result.Session.SessionSettings.NumPublicConnections;
 				OutMaxPlayers.Add(MaxPlayers);
 			}
@@ -320,7 +332,7 @@ void UOnlineSessionManager::OnFindSessionsComplete(bool bWasSuccessful)
 	}
 	else
 	{
-		UE_LOG(LogOnlineSession, Warning, TEXT("[OnFindSessionsComplete] °Ë»ö ½ÇÆĞ ¶Ç´Â °á°ú ¾øÀ½."));
+		UE_LOG(LogOnlineSession, Warning, TEXT("[OnFindSessionsComplete] ê²€ìƒ‰ ì‹¤íŒ¨ ë˜ëŠ” ê²°ê³¼ ì—†ìŒ."));
 	}
 
 	// Broadcast
@@ -333,23 +345,23 @@ void UOnlineSessionManager::OnFindSessionsComplete(bool bWasSuccessful)
 
 void UOnlineSessionManager::JoinSession(int32 SessionIndex)
 {
-	// À¯È¿°Ë»ç
+	// ìœ íš¨ê²€ì‚¬
 	if (!SessionInterface.IsValid() || !SessionSearch.IsValid()) return;
 
-	// ¹è¿­ ÀÎµ¦½º ¹üÀ§ Ã¼Å©(Å©·¯½¬ ¹æÁö)
+	// ë°°ì—´ ì¸ë±ìŠ¤ ë²”ìœ„ ì²´í¬(í¬ëŸ¬ì‰¬ ë°©ì§€)
 	if (!SearchResults.IsValidIndex(SessionIndex))
 	{
-		UE_LOG(LogOnlineSession, Error, TEXT("[JoinSession] Àß¸øµÈ ÀÎµ¦½ºÀÔ´Ï´Ù: %d"), SessionIndex);
+		UE_LOG(LogOnlineSession, Error, TEXT("[JoinSession] ì˜ëª»ëœ ì¸ë±ìŠ¤ì…ë‹ˆë‹¤: %d"), SessionIndex);
 		return;
 	}
 
 	PendingSessionIndex = SessionIndex;
 
-	// È¤½Ã ÀÌ¹Ì ´Ù¸¥ ¹æ¿¡ µé¾î°¡ ÀÖ´Ù¸é? -> ¸ÕÀú ³ª¿À°í(Destroy) µé¾î°¡±â(Join)? ¾È µÇ¸é ¼ø¼­ ¹İ´ë·Î
+	// ì´ë¯¸ ë‹¤ë¥¸ ë°©ì— ë“¤ì–´ê°€ ìˆë‹¤ë©´ ë¨¼ì € ë‚˜ì˜¤ê³ (Destroy) ë“¤ì–´ê°€ê¸°(Join)
 	FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 	if (ExistingSession)
 	{
-		UE_LOG(LogOnlineSession, Warning, TEXT("[JoinSession] ±âÁ¸ ¼¼¼Ç ¹ß°ß. ÆÄ±« ÈÄ Âü°¡ÇÕ´Ï´Ù."));
+		UE_LOG(LogOnlineSession, Warning, TEXT("[JoinSession] ê¸°ì¡´ ì„¸ì…˜ ë°œê²¬. íŒŒê´´ í›„ ì°¸ê°€í•©ë‹ˆë‹¤."));
 
 		if (OnDestroySessionCompleteHandle.IsValid())
 		{
@@ -370,7 +382,7 @@ void UOnlineSessionManager::JoinSessionInternal()
 {
 	if (!SessionInterface.IsValid()) return;
 
-	// µ¨¸®°ÔÀÌÆ® µî·Ï
+	// ë¸ë¦¬ê²Œì´íŠ¸ ë“±ë¡
 	if (OnJoinSessionCompleteHandle.IsValid())
 	{
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteHandle);
@@ -378,15 +390,15 @@ void UOnlineSessionManager::JoinSessionInternal()
 	OnJoinSessionCompleteHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(
 		FOnJoinSessionCompleteDelegate::CreateUObject(this, &UOnlineSessionManager::OnJoinSessionComplete));
 
-	UE_LOG(LogOnlineSession, Log, TEXT("[JoinSession] %d¹ø ¼¼¼Ç¿¡ Âü°¡ ¿äÃ» Áß..."), PendingSessionIndex);
+	UE_LOG(LogOnlineSession, Log, TEXT("[JoinSession] %dë²ˆ ì„¸ì…˜ì— ì°¸ê°€ ìš”ì²­ ì¤‘..."), PendingSessionIndex);
 
-	// ½ÇÁ¦ Join ¿äÃ» (·ÎÄÃ À¯Àú(controller=0)°¡, GameSession ÀÌ¸§À¸·Î, ÇØ´ç °Ë»ö °á°ú¿¡ Á¢¼Ó)
+	// ì‹¤ì œ Join ìš”ì²­ (ë¡œì»¬ ìœ ì €(controller=0)ê°€, GameSession ì´ë¦„ìœ¼ë¡œ, í•´ë‹¹ ê²€ìƒ‰ ê²°ê³¼ì— ì ‘ì†)
 	SessionInterface->JoinSession(0, NAME_GameSession, SearchResults[PendingSessionIndex]);
 }
 
 void UOnlineSessionManager::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	//À¯È¿°Ë»ç
+	//ìœ íš¨ê²€ì‚¬
 	if (SessionInterface.IsValid())
 	{
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteHandle);
@@ -394,25 +406,25 @@ void UOnlineSessionManager::OnJoinSessionComplete(FName SessionName, EOnJoinSess
 
 	if (Result == EOnJoinSessionCompleteResult::Success)
 	{
-		UE_LOG(LogOnlineSession, Log, TEXT("[OnJoinSessionComplete] Âü°¡ ¼º°ø! ¼­¹ö ÁÖ¼Ò¸¦ ¹Ş¾Æ¿É´Ï´Ù."));
+		UE_LOG(LogOnlineSession, Log, TEXT("[OnJoinSessionComplete] ì°¸ê°€ ì„±ê³µ! ì„œë²„ ì£¼ì†Œë¥¼ ë°›ì•„ì˜µë‹ˆë‹¤."));
 
-		// µî·Ï ¼º°ø. ±×·¯¸é ÀÌµ¿À» À§ÇØ ClientTravel
+		// ë“±ë¡ ì„±ê³µ. ê·¸ëŸ¬ë©´ ì´ë™ì„ ìœ„í•´ ClientTravel
 		FString ConnectString;
 		if (SessionInterface->GetResolvedConnectString(NAME_GameSession, ConnectString))
 		{
-			UE_LOG(LogOnlineSession, Log, TEXT("[ClientTravel] ÁÖ¼Ò: %s"), *ConnectString);
+			UE_LOG(LogOnlineSession, Log, TEXT("[ClientTravel] ì£¼ì†Œ: %s"), *ConnectString);
 
 			APlayerController* PC = GetGameInstance()->GetFirstLocalPlayerController();
 			if (PC)
 			{
-				// Àı´ë °æ·Î(Absolute)·Î ¿©Çà ¶°³² -> ·Îµù È­¸é ÈÄ ÇØ´ç ¼­¹ö ¸ÊÀ¸·Î ÁøÀÔ
+				// ì ˆëŒ€ ê²½ë¡œ(Absolute)ë¡œ ì—¬í–‰ ë– ë‚¨ -> ë¡œë”© í™”ë©´ í›„ í•´ë‹¹ ì„œë²„ ë§µìœ¼ë¡œ ì§„ì…
 				PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
 			}
 		}
 	}
 	else
 	{
-		UE_LOG(LogOnlineSession, Error, TEXT("[OnJoinSessionComplete] Âü°¡ ½ÇÆĞ ÄÚµå: %d"), (int32)Result);
+		UE_LOG(LogOnlineSession, Error, TEXT("[OnJoinSessionComplete] ì°¸ê°€ ì‹¤íŒ¨ ì½”ë“œ: %d"), (int32)Result);
 	}
 }
 
@@ -423,7 +435,7 @@ void UOnlineSessionManager::OnDestroySessionThenJoin(FName SessionName, bool bWa
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteHandle);
 	}
 
-	// ±âÁ¸ ¼¼¼Ç ÆÄ±«°¡ ³¡³µÀ¸´Ï ´Ù½Ã Âü°¡¸¦ ½Ãµµ
+	// ê¸°ì¡´ ì„¸ì…˜ íŒŒê´´ê°€ ëë‚¬ìœ¼ë‹ˆ ë‹¤ì‹œ ì°¸ê°€ë¥¼ ì‹œë„
 	JoinSessionInternal();
 }
 
@@ -440,10 +452,10 @@ void UOnlineSessionManager::LeaveServer(const FString& InRoomId)
 	APlayerController* PC = GetGameInstance()->GetFirstLocalPlayerController();
 	if (!PC) return;
 
-	// ³»°¡ È£½ºÆ®ÀÎÁö Å¬¶óÀÌ¾ğÆ®ÀÎÁö È®ÀÎ
+	// ë‚´ê°€ í˜¸ìŠ¤íŠ¸ì¸ì§€ í´ë¼ì´ì–¸íŠ¸ì¸ì§€ í™•ì¸
 	if (PC->HasAuthority())
 	{
-		// [È£½ºÆ®ÀÎ °æ¿ì] ¼¼¼Ç ÆÄ±« ÀÌÈÄ¿¡ DestroySessionComplete·Î, ±×·¡¾ß Stateº¸´Ù ¸ÕÀú ²÷°í, ´ÙÀ½ State Á¾·á ÀÎÁ¤?
+		// [í˜¸ìŠ¤íŠ¸ì¸ ê²½ìš°] ì„¸ì…˜ íŒŒê´´ -> OnDestroySessionCompleteì—ì„œ Spring ë°© ì‚­ì œ í›„ ë©”ì¸ ë©”ë‰´ë¡œ ì´ë™
 		UE_LOG(LogOnlineSession, Log, TEXT("[LeaveServer] Host: destroying session"));
 
 		if (OnDestroySessionCompleteHandle.IsValid())
@@ -453,22 +465,23 @@ void UOnlineSessionManager::LeaveServer(const FString& InRoomId)
 		OnDestroySessionCompleteHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
 			FOnDestroySessionCompleteDelegate::CreateUObject(this, &UOnlineSessionManager::OnDestroySessionComplete));
 
-		// ¼¼¼ÇÀ» ÆÄ±«ÇÏ¸é(¼­¹ö°¡ ´İÈ÷¸é) Å¬¶óÀÌ¾ğÆ®µéµµ ²÷¾î¹ö¸®±â
+		// ì„¸ì…˜ì„ íŒŒê´´í•˜ë©´(ì„œë²„ê°€ ë‹«íˆë©´) í´ë¼ì´ì–¸íŠ¸ ì—°ê²°ë„ ëŠê¹€
 		SessionInterface->DestroySession(NAME_GameSession);
 	}
 	else
 	{
-		// Å¬¶óÀÌ¾ğÆ®ÀÎ °æ¿ì
+		// í´ë¼ì´ì–¸íŠ¸ì¸ ê²½ìš°
 		UE_LOG(LogOnlineSession, Log, TEXT("[LeaveServer] Client: travel to MainMenu"));
 
-		// ¸ÕÀú ¸ŞÀÎ ¸Ş´º·Î ÀÌµ¿ (¿¬°á ²÷±â)
+		// ë¨¼ì € ë©”ì¸ ë©”ë‰´ë¡œ ì´ë™ (ì—°ê²° ëŠê¸°)
 		PC->ClientTravel(TEXT("/Game/FPMovement/Demo/Maps/MainMenu"), ETravelType::TRAVEL_Absolute);
 
-		//·ÎÄÃ¿¡ ³²¾ÆÀÖ´Â ¼¼¼Ç Á¤º¸ Á¤¸® ¿£Áø(listen)¼­¹ö·Î
+		//ë¡œì»¬ì— ë‚¨ì•„ìˆëŠ” ì„¸ì…˜ ì •ë³´ ì •ë¦¬ ì—”ì§„(listen)ì„œë²„ë¡œ
 		SessionInterface->DestroySession(NAME_GameSession);
 	}
 }
 
+//Springì— ë°© ì‚­ì œ ìš”ì²­ (í˜¸ìŠ¤íŠ¸ê°€ ì„¸ì…˜ì„ ë‹«ì„ ë•Œ OnDestroySessionCompleteì—ì„œ í˜¸ì¶œ)
 void UOnlineSessionManager::DeleteRoomOnSpring(const FString& RoomId)
 {
 	if (RoomId.IsEmpty())
@@ -477,16 +490,20 @@ void UOnlineSessionManager::DeleteRoomOnSpring(const FString& RoomId)
 		return;
 	}
 
+	// [Spring í†µì‹  ë¹„í™œì„±í™”] ì„œë²„ ë¹„ìš© ë°©ì§€ë¥¼ ìœ„í•´ HTTP ìš”ì²­ë¶€ ì£¼ì„ ì²˜ë¦¬ (ë³µêµ¬ ì‹œ /* */ ì œê±°)
+	UE_LOG(LogOnlineSession, Warning, TEXT("[DeleteRoomOnSpring] Spring request disabled"));
+	/*
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
-	Request->SetURL(TEXT("http://127.0.0.1:7777/api/room-context/force")); //@@@@@@@@@ENDÆ÷ÀÎÆ®@@@@@@
-	Request->SetVerb(TEXT("DELETE")); // ¼­¹ö°¡ DELETE¸¦ Áö¿øÇÏ¸é »ç¿ë, (¾ÈÇÏ¸é POST·Î º¯°æÀ¸·Î ´Ù½Ã ½ÃµµÇØ¶ó ÀåÁö¿í)
+	Request->SetURL(TEXT("http://127.0.0.1:7777/api/room-context/force")); // Spring Boot ì—”ë“œí¬ì¸íŠ¸
+	Request->SetVerb(TEXT("DELETE")); // ë°© ê°•ì œ ì‚­ì œ
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 	Request->SetHeader(TEXT("Room-Id"), RoomId);
 	//Request->SetHeader(TEXT("Authorization"), FString::Printf(TEXT("Bearer %s"), *AccessToken));
-	Request->SetContentAsString(TEXT("")); // ¹Ùµğ ¾øÀ½
+	Request->SetContentAsString(TEXT("")); // ë°”ë”” ì—†ìŒ
 
 	Request->OnProcessRequestComplete().BindUObject(this, &UOnlineSessionManager::OnDeleteRoomResponse);
 	Request->ProcessRequest();
+	*/
 }
 
 void UOnlineSessionManager::OnDeleteRoomResponse(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
@@ -509,13 +526,13 @@ void UOnlineSessionManager::OnDestroySessionComplete(FName SessionName, bool bWa
 		SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteHandle);
 	}
 
-	// È£½ºÆ®°¡ ¼¼¼ÇÀ» ¼º°øÀûÀ¸·Î ´İ¾ÒÀ¸¸é ¸ŞÀÎ ¸Ş´º·Î ÀÌµ¿
+	// í˜¸ìŠ¤íŠ¸ê°€ ì„¸ì…˜ì„ ì„±ê³µì ìœ¼ë¡œ ë‹«ì•˜ìœ¼ë©´ ë©”ì¸ ë©”ë‰´ë¡œ ì´ë™
 	if (bWasSuccessful)
 	{
-		//Spring¿¡ ¹æ »èÁ¦ ¿äÃ» º¸³»°í
+		//Springì— ë°© ì‚­ì œ ìš”ì²­ ë³´ë‚´ê³ 
 		DeleteRoomOnSpring(CurrentLeavingRoomId);
 
-		//±× ´ÙÀ½ ¸ŞÀÎÀ¸·Î °¡ÀÚ
+		//ê·¸ ë‹¤ìŒ ë©”ì¸ ë©”ë‰´ë¡œ ì´ë™
 		UWorld* World = GetWorld();
 		if (World)
 		{
@@ -524,16 +541,20 @@ void UOnlineSessionManager::OnDestroySessionComplete(FName SessionName, bool bWa
 	}
 }
 
+/**
+ * Steam ë¡œê·¸ì¸ ì™„ë£Œ í›„ Steam ì¸ì¦ í‹°ì¼“ì„ Spring ë°±ì—”ë“œë¡œ ë³´ë‚´ ë¡œê·¸ì¸ (AccessToken ë“± ë°œê¸‰)
+ * Initialize() ë˜ëŠ” OnLoginStatusChanged()ì—ì„œ ìë™ í˜¸ì¶œ
+ */
 void UOnlineSessionManager::LoginToBackend()
 {
-	// 1. Identity Interface À¯È¿¼º °Ë»ç
+	// 1. Identity Interface ìœ íš¨ì„± ê²€ì‚¬
 	if (!IdentityInterface.IsValid())
 	{
 		UE_LOG(LogOnlineSession, Error, TEXT("[LoginToBackend] IDENTITYINTERFACE IS INVALID!"));
 		return;
 	}
 
-	// 2. ÇöÀç 0¹ø(·ÎÄÃ) À¯ÀúÀÇ °íÀ¯ ID °¡Á®¿À±â
+	// 2. í˜„ì¬ 0ë²ˆ(ë¡œì»¬) ìœ ì €ì˜ ê³ ìœ  ID ê°€ì ¸ì˜¤ê¸°
 	FUniqueNetIdPtr LocalUserId = IdentityInterface->GetUniquePlayerId(0);
 	if (!LocalUserId.IsValid())
 	{
@@ -541,7 +562,7 @@ void UOnlineSessionManager::LoginToBackend()
 		return;
 	}
 
-	// 3. Steam Auth Token (Ticket) °¡Á®¿À±â
+	// 3. Steam Auth Token (Ticket) ê°€ì ¸ì˜¤ê¸°
 	FString AuthTicket = IdentityInterface->GetAuthToken(0);
 
 	if (AuthTicket.IsEmpty())
@@ -552,35 +573,40 @@ void UOnlineSessionManager::LoginToBackend()
 
 	UE_LOG(LogOnlineSession, Log, TEXT("[LoginToBackend] SUCCESS STEAM TICKET GET! TRYING TO SENDING SPRING"));
 
-	// 4. JSON °´Ã¼ »ı¼º
+	// 4. JSON ê°ì²´ ìƒì„±
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
 	JsonObject->SetStringField("auth_ticket", AuthTicket);
 
-	// 5. JSONÀ» StringÀ¸·Î Á÷·ÄÈ­
+	// 5. JSONì„ Stringìœ¼ë¡œ ì§ë ¬í™”
 	FString JsonString;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&JsonString);
 	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
 
 	UE_LOG(LogTemp, Warning, TEXT("[LoginToBackend] JSON Payload Ready: %s"), *JsonString);
 
-	// 7. HTTP ¿äÃ» »ı¼º(POST)
+	// [Spring í†µì‹  ë¹„í™œì„±í™”] ì„œë²„ ë¹„ìš© ë°©ì§€ë¥¼ ìœ„í•´ HTTP ìš”ì²­ë¶€ ì£¼ì„ ì²˜ë¦¬ (ë³µêµ¬ ì‹œ /* */ ì œê±°)
+	UE_LOG(LogTemp, Warning, TEXT("[LoginToBackend] Spring request disabled"));
+	/*
+	// 7. HTTP ìš”ì²­ ìƒì„±(POST)
 	FHttpModule* Http = &FHttpModule::Get();
 	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = Http->CreateRequest();
 
 	Request->OnProcessRequestComplete().BindUObject(this, &UOnlineSessionManager::OnLoginResponseReceived);
-	Request->SetURL("http://127.0.0.1:7777/api/auth/steam-client-login"); //@@@@@@@@@ENDÆ÷ÀÎÆ®@@@@@@
+	Request->SetURL("http://127.0.0.1:7777/api/auth/steam-client-login"); // Spring Boot ì—”ë“œí¬ì¸íŠ¸
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
-	// 8. ¹ÙÀÌÆ® ¹è¿­ Àü´Ş
+	// 8. ë°”ì´íŠ¸ ë°°ì—´ ì „ë‹¬
 	Request->SetContentAsString(JsonString);
 	UE_LOG(LogTemp, Warning, TEXT("[LoginToBackend] Sending HTTP Request to backend..."));
-	// 9. ¿äÃ» Àü¼Û
+	// 9. ìš”ì²­ ì „ì†¡
 	Request->ProcessRequest();
+	*/
 }
 
+// ë°±ì—”ë“œ ë¡œê·¸ì¸ ì‘ë‹µ ì²˜ë¦¬: { code, message, result: { access_token, refresh_token, user_id, steam_id, nickname, role } }
 void UOnlineSessionManager::OnLoginResponseReceived(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bWasSuccessful)
 {
-	// È®ÀÎ
+	// í™•ì¸
 	if (!bWasSuccessful || !Response.IsValid())
 	{
 		UE_LOG(LogOnlineSession, Error, TEXT("[Backend Login] REQUEST FAILED. CANT CONNECT TO SERVER"));
@@ -591,7 +617,7 @@ void UOnlineSessionManager::OnLoginResponseReceived(FHttpRequestPtr Request, FHt
 	UE_LOG(LogTemp, Warning, TEXT("[Backend Login] Response Received (Length=%d)"), ResponseBody.Len());
 	UE_LOG(LogTemp, Warning, TEXT("[Backend Login] Raw Body: %s"), *ResponseBody);
 
-	// JSON ÆÄ½Ì
+	// JSON íŒŒì‹±
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(ResponseBody);
 
@@ -601,13 +627,13 @@ void UOnlineSessionManager::OnLoginResponseReceived(FHttpRequestPtr Request, FHt
 		return;
 	}
 
-	// ÇÊµå ÃßÃâ
+	// í•„ë“œ ì¶”ì¶œ
 	this->Code = JsonObject->GetIntegerField(TEXT("code"));
 	this->BackendMessage = JsonObject->GetStringField(TEXT("message"));
 
 	UE_LOG(LogOnlineSession, Log, TEXT("[Backend Login] Code: %d, Message: %s"), this->Code, *this->BackendMessage);
 
-	// result ³»ºÎ ÆÄ½Ì 
+	// result ë‚´ë¶€ íŒŒì‹± 
 	if (!JsonObject->HasTypedField<EJson::Object>(TEXT("result")))
 	{
 		UE_LOG(LogOnlineSession, Error, TEXT("[Backend Login] NO RESULT FIELD!"));
@@ -616,10 +642,7 @@ void UOnlineSessionManager::OnLoginResponseReceived(FHttpRequestPtr Request, FHt
 
 	const TSharedPtr<FJsonObject> ResultObj = JsonObject->GetObjectField(TEXT("result"));
 	UE_LOG(LogTemp, Warning, TEXT("[Backend Login] Parsing result fields..."));
-	// GameInstance ÀúÀå
-	// GameInstanceSubsystemÀ» »ç¿ëÇÏ¹Ç·Î GameInstance·Î °¥ ÇÊ¿ä ¾ø´Ù.
-	// ±×³É Subsystem ³»ºÎ º¯¼ö¿¡ Á÷Á¢ ÀúÀåÀ¸·Î º¯°æ
-	// ¾ÖÃÊ¿¡ ±×³É Instance·Î ¸¸µé°É ÈÄÈ¸ÇÏ°íÀÖ¾î¿ë~~ ¾È µÇ¸é INstance·Î
+	// ë¡œê·¸ì¸ ì •ë³´ëŠ” GameInstanceê°€ ì•„ë‹Œ Subsystem ë‚´ë¶€ ë³€ìˆ˜ì— ì§ì ‘ ì €ì¥
 
 	SetAccessToken(ResultObj->GetStringField(TEXT("access_token")));
 
@@ -642,7 +665,7 @@ void UOnlineSessionManager::SetAccessToken(const FString& NewToken)
 {
 	AccessToken = NewToken;
 
-	// ºí·çÇÁ¸°Æ®·Î ½ÅÈ£ º¸³»±â
+	// ë¸”ë£¨í”„ë¦°íŠ¸ë¡œ ì‹ í˜¸ ë³´ë‚´ê¸°
 	OnAccessTokenUpdated.Broadcast(AccessToken);
 	UE_LOG(LogTemp, Warning, TEXT("[Backend Login] AccessToken length: %d"), AccessToken.Len());
 

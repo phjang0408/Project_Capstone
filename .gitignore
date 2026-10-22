@@ -9,6 +9,23 @@
 !Source/
 !Source/Capstone/
 !Source/Capstone/**
+!Source/*.Target.cs
+
+# =========================
+# Allow project files
+# =========================
+!Capstone.uproject
+!Config/
+!Config/Default*.ini
+!.vsconfig
+
+# =========================
+# Allow docs
+# =========================
+!README.md
+!Capstone.png
+!docs/
+!docs/**
 
 # =========================
 # Allow git config file

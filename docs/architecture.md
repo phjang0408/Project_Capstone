@@ -42,6 +42,8 @@ sequenceDiagram
 
 요청은 `FHttpModule`로 생성하며 `Room-Id` 헤더를 사용합니다. AI 질문과 최종 제출은 비동기 완료 콜백에서 JSON 응답을 파싱합니다. 최종 결과의 `grade`, `feedback`은 `TryGetStringField`로 읽습니다.
 
+위 표의 요청과 `LoginToBackend`, `DeleteRoomOnSpring`의 HTTP 요청부는 서버 비용 방지를 위해 현재 주석 처리되어 있습니다. JSON 직렬화와 응답 파싱 코드는 그대로 남아 있어 블록 주석만 제거하면 위 흐름으로 복구됩니다.
+
 ## 복제와 UI 알림
 
 `GetLifetimeReplicatedProps`에 등록된 필드는 `AIAnswer`, `FinalScore`, `FinalGrade`, `FinalFeedback`입니다. AI 답변은 `Multicast_AIAnswerUpdated`에서 `OnAIAnswerUpdated_BP` 이벤트로 연결됩니다. 최종 제출 응답은 `OnFinalSubmitResult` Delegate를 호출합니다.
@@ -60,8 +62,8 @@ sequenceDiagram
 
 ## 소스 위치
 
-- [`OnlineSessionManager.cpp`](../Capstone/OnlineSessionManager.cpp)
-- [`OnlineSessionManager.h`](../Capstone/OnlineSessionManager.h)
-- [`AMyGameStateBase.cpp`](../Capstone/AMyGameStateBase.cpp)
-- [`AMyGameStateBase.h`](../Capstone/AMyGameStateBase.h)
-- [`Capstone.Build.cs`](../Capstone/Capstone.Build.cs)
+- [`OnlineSessionManager.cpp`](../Source/Capstone/OnlineSessionManager.cpp)
+- [`OnlineSessionManager.h`](../Source/Capstone/OnlineSessionManager.h)
+- [`AMyGameStateBase.cpp`](../Source/Capstone/AMyGameStateBase.cpp)
+- [`AMyGameStateBase.h`](../Source/Capstone/AMyGameStateBase.h)
+- [`Capstone.Build.cs`](../Source/Capstone/Capstone.Build.cs)

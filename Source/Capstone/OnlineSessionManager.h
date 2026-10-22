@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
@@ -8,10 +8,12 @@
 #include "OnlineSessionSettings.h"
 #include "OnlineSessionManager.generated.h"
 
+// BP 알림용 델리게이트 (세션 검색 결과 최대 인원 목록, AccessToken 갱신, RoomId 갱신)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFindSessionsCompleteBP, const TArray<int32>&, MaxPlayersList);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAccessTokenUpdated, const FString&, NewAccessToken);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRoomIdUpdated, const FString&, NewRoomId);
 
+// Steam 세션 관리 + Spring 백엔드 로그인/방 생성·삭제를 담당하는 GameInstance 서브시스템
 UCLASS()
 class CAPSTONE_API UOnlineSessionManager : public UGameInstanceSubsystem
 {
@@ -22,7 +24,7 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	// Session ���
+	// Session 기능
 	UFUNCTION(BlueprintCallable)
 	void CreateSession(int32 NumPublicConnections = 4, bool bIsLAN = false);
 	UFUNCTION(BlueprintCallable)
@@ -34,7 +36,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LeaveServer(const FString& InRoomId);
 
-	// �α��� ������ ����� ����
+	// 로그인 데이터 저장용 변수 (Spring 로그인 응답으로 채워짐)
 	UPROPERTY() int32 Code;
 	UPROPERTY() FString BackendMessage;
 	UPROPERTY(BlueprintReadOnly) FString AccessToken;
@@ -50,12 +52,14 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnRoomIdUpdated OnRoomIdUpdated;
 
+	// 현재 방 ID (= Steam SessionId), GameState의 RoomID로 전달됨
 	UPROPERTY(BlueprintReadOnly)
 	FString CurrentRoomId;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnFindSessionsCompleteBP OnFindSessionsCompleteBP;
 
+	// Spring 백엔드 통신 (현재 HTTP 요청부 주석 처리됨)
 	UFUNCTION(BlueprintCallable)
 	void LoginToBackend();
 

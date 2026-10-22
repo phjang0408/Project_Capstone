@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "ForTestActor.generated.h"
 
+// Empty actor kept for testing (default UE template, no game logic)
 UCLASS()
 class CAPSTONE_API AForTestActor : public AActor
 {

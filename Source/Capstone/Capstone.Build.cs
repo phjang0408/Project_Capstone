@@ -13,10 +13,12 @@ public class Capstone : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
+			// Steam sessions / login (UOnlineSessionManager)
 			"OnlineSubsystem",
 			"OnlineSubsystemSteam",
 			"OnlineSubsystemUtils",
 			"SteamSockets",
+			// HTTP + JSON communication with the Spring Boot backend (requests currently commented out)
 			"Http",
 			"Json",
 			"JsonUtilities"

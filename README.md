@@ -16,7 +16,7 @@
 | 형태 | 3인 팀 캡스톤 프로젝트, Windows 게임 |
 | 보고서 | 2025학년도 2학기 최종보고서, 2025.12.10 작성 |
 | 플레이 구성 | 보고서 기준 1~4인, 증거물 10종, 잠금 공간 해금과 최종 추리 제출 |
-| 이 저장소의 범위 | OnlineSessionManager, GameState, 데이터 구조 및 모듈 설정 |
+| 이 저장소의 범위 | OnlineSessionManager, GameState, 데이터 구조 및 모듈 설정, 프로젝트 설정(`.uproject`·`Config`) |
 | 주요 기술 | C++, Unreal Engine 5, Steam OnlineSubsystem, HTTP, JSON, Delegate, RPC, Replication |
 
 ## 플레이 흐름
@@ -37,7 +37,7 @@
 
 ### 세션 생성부터 참가와 종료까지
 
-[`UOnlineSessionManager`](Capstone/OnlineSessionManager.cpp)는 `UGameInstanceSubsystem`을 기반으로 OnlineSubsystem의 세션·로그인 인터페이스를 관리합니다.
+[`UOnlineSessionManager`](Source/Capstone/OnlineSessionManager.cpp)는 `UGameInstanceSubsystem`을 기반으로 OnlineSubsystem의 세션·로그인 인터페이스를 관리합니다.
 
 - 기존 세션이 있으면 종료 완료 Delegate에서 생성 또는 참가를 이어갑니다.
 - 생성된 세션 ID를 `Room-Id`로 백엔드에 전달하고, 생성 완료 후 로비로 이동합니다.
@@ -49,12 +49,14 @@
 
 ### 게임 상태와 외부 API 연결
 
-[`AMyGameStateBase`](Capstone/AMyGameStateBase.cpp)는 증거·문 상태·질문·최종 답안을 JSON으로 직렬화해 Spring Boot API에 전달합니다.
+[`AMyGameStateBase`](Source/Capstone/AMyGameStateBase.cpp)는 증거·문 상태·질문·최종 답안을 JSON으로 직렬화해 Spring Boot API에 전달합니다.
 
 - 요청의 `Room-Id` 헤더로 방 컨텍스트를 구분합니다.
 - `OnProcessRequestComplete` 콜백에서 AI 답변과 채점 응답을 처리합니다.
 - `result.answer`, `result.score`, `result.grade`, `result.feedback`를 게임 상태로 연결합니다.
 - AI 응답에는 Multicast RPC와 Blueprint 이벤트를 사용하며, AI 답변과 최종 점수·등급·피드백은 복제 프로퍼티로 등록되어 있습니다.
+
+현재 공개 소스는 서버 비용 방지를 위해 **Spring Boot로 보내는 HTTP 요청부를 주석 처리**했습니다. 로그인, 방 생성·삭제, 증거·문 상태 전송, AI 질문, 최종 제출 요청이 모두 해당하며, 각 함수의 `[Spring 통신 비활성화]` 표시 아래 블록 주석을 제거하면 복구됩니다. 비활성화 상태에서는 AI 답변과 채점 결과 이벤트가 발생하지 않습니다.
 
 ### 팀 시스템과의 연결
 
@@ -80,9 +82,9 @@ Spring Boot·Redis·MySQL·FastAPI·RAG는 최종보고서에 기재된 **팀 �
 ## 실행과 소스 확인
 
 - **플레이 배포본:** 공유 폴더의 `HelpWatson.zip`. 압축 내부 실행 경로는 `HelpWatson/Windows/Capstone.exe`입니다.
-- **소스 검토:** [`Capstone/`](Capstone)에서 세션 처리와 API 연동 흐름을 확인할 수 있습니다.
-- **재빌드:** 이 저장소에는 `.uproject`, `Content`, `Config`가 없어 원본 Unreal 프로젝트가 추가로 필요합니다.
-- **서비스 의존성:** 온라인 방 검색은 Steam 로그인이 필요하며, AI 대화·채점은 별도 백엔드와 AI 서비스에 의존합니다. 배포본의 현재 외부 서비스 연결 상태는 확인되지 않았습니다.
+- **소스 검토:** [`Source/Capstone/`](Source/Capstone)에서 세션 처리와 API 연동 흐름을 확인할 수 있습니다.
+- **재빌드:** 이 저장소에는 `.uproject`와 `Config`는 포함되어 있지만 맵·Blueprint·UI 에셋이 들어 있는 `Content`가 없어 원본 Unreal 프로젝트가 추가로 필요합니다.
+- **서비스 의존성:** 온라인 방 검색은 Steam 로그인이 필요하며, AI 대화·채점은 별도 백엔드와 AI 서비스에 의존합니다. 공개 소스는 Spring 요청이 비활성화되어 있으며, 배포본의 현재 외부 서비스 연결 상태는 확인되지 않았습니다.
 
 ## 자료 출처
 

@@ -29,7 +29,7 @@
 
 ## 재현을 위해 필요한 자료
 
-- 원본 `.uproject`, `Config`, `Content`와 사용한 엔진 버전
+- 원본 `Content`와 프로젝트 플러그인 (`.uproject`·`Config`는 저장소에 포함)
 - Blueprint의 RPC 호출 주체, 공유 인벤토리 및 UI 갱신 경로
 - 배포본에 맞는 백엔드·AI 서버 설정과 실행 가능한 API 계약
 - 실제 참가자 수, 시험 환경, 성능 측정 원본
